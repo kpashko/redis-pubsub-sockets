@@ -1,0 +1,71 @@
+services:
+  app:
+    container_name: app
+    build:
+      context: .
+      target: development
+    volumes:
+      - ./:/app/
+    ports:
+      - 8080:8080
+    tty: true
+    environment:
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: curl --fail http://localhost:8080/status || exit 1
+      interval: 2s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  db:
+    container_name: postgres
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ab_tech_test
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: r00t66
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d ab_tech_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  tests:
+    container_name: tests
+    profiles:
+      - donotstart
+    build:
+      context: .
+      target: testing
+    privileged: true
+    volumes:
+      - ./:/app/
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python -m pytest -vv --disable-warnings --maxfail=1
+
+volumes:
+  db:
