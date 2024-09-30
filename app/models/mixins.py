@@ -18,3 +18,21 @@ class HashIDMixin:
         unique=True,
         nullable=False,
     )
+
+
+class AuditMixin:
+    created_at = sa.Column(
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.func.current_timestamp(),
+    )
+    created_by = sa.Column(sa.String, nullable=False)
+    updated_at = sa.Column(
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.func.current_timestamp(),
+        onupdate=sa.func.current_timestamp(),
+    )
+    updated_by = sa.Column(sa.String, nullable=False)
+    cancelled_at = sa.Column(sa.DateTime(timezone=True))
+    cancelled_by = sa.Column(sa.String)

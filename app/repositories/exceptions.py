@@ -2,5 +2,9 @@ class RepositoryException(Exception):
     pass
 
 
-class RepositoryNotFoundException(RepositoryException):
+class NotFoundException(RepositoryException):
+    pass
+
+
+class AlreadyExistsException(RepositoryException):
     pass

@@ -1,8 +1,10 @@
 from fastapi import FastAPI
 
+from .domains.auth import routes as auth
 from .domains.monitoring import routes as monitoring
 from .domains.task import routes as task
 from .domains.worker import routes as worker
+from .domains.user import routes as user
 
 
 app = FastAPI(
@@ -24,3 +26,5 @@ def health_check() -> dict[str, str]:
 app.include_router(monitoring.router, prefix="/monitoring")
 app.include_router(task.router, prefix="/tasks", tags=["tasks"])
 app.include_router(worker.router, prefix="/workers", tags=["workers"])
+app.include_router(auth.router, prefix="", tags=["auth"])
+app.include_router(user.router, prefix="/users", tags=["users"])

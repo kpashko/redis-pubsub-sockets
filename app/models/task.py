@@ -1,5 +1,5 @@
 from app.models.base import Base
-from app.models.mixins import HashIDMixin
+from app.models.mixins import AuditMixin, HashIDMixin
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from app.entities.task import TaskStatus
 
 
-class TaskORM(Base, HashIDMixin):
+class TaskORM(Base, AuditMixin, HashIDMixin):
     __tablename__ = "task"
 
     status = sa.Column(
