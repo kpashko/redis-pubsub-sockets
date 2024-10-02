@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from pydantic import BaseModel
 import bcrypt
 
+from app.repositories.exceptions import NotFoundException
 from app.repositories.user import set_up_user_repository
 from app.settings import settings
 
@@ -59,7 +60,10 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> Non
 
 async def authenticate_user(user_email: str, password: str):
     async with set_up_user_repository() as repo:
-        user = await repo.get_by_email(user_email)
+        try:
+            user = await repo.get_by_email(user_email)
+        except NotFoundException:
+            return False
 
     if not user:
         return False

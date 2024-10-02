@@ -4,23 +4,29 @@ from pydantic import BaseModel
 
 
 class TaskStatus(StrEnum):
-    NOT_STARTED = "not_started"
-    PENDING = "pending"
+    QUEUED = "queued"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
 
 
+class TaskType(StrEnum):
+    SAMPLE = "sample"
+
+
 class Task(BaseModel):
     id: str
     status: TaskStatus
+    task_type: TaskType
 
 
 class TaskCreate(BaseModel):
+    id: str
     created_by: None | str = None
     updated_by: None | str = None
-    status: TaskStatus = TaskStatus.NOT_STARTED
+    status: TaskStatus = TaskStatus.QUEUED
+    task_type: TaskType
 
 
 class TaskUpdate(BaseModel):
