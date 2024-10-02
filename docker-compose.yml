@@ -38,6 +38,13 @@ services:
       retries: 3
       start_period: 5s
 
+  migrate:
+    build: .
+    command: alembic upgrade head
+    depends_on:
+      - db
+    restart: "no"
+
   redis:
     container_name: redis
     image: redis:latest
