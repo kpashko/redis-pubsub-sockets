@@ -12,5 +12,8 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int
     jwt_secret_key: str
 
+    worker_list_key: str
+    task_queue: str
+
 
 settings = Settings()
