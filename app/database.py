@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession as AsyncSessionType
+from sqlalchemy.ext.asyncio import AsyncSession as AsyncSessionType
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
+
 from app.settings import settings
 
 async_engine = create_async_engine(

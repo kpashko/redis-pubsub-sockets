@@ -1,6 +1,14 @@
-from fastapi import APIRouter, WebSocket
+import json
+import logging
 
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+
+from app.domains.monitoring.manager import WebSocketConnectionManager
+from app.redis import async_redis_conn
+
+logger = logging.getLogger(__name__)
 router = APIRouter()
+manager = WebSocketConnectionManager()
 
 
 # Monitor all tasks in real-time

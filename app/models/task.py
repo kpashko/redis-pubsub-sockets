@@ -1,10 +1,9 @@
-from app.models.base import Base
-from app.models.mixins import AuditMixin, HashIDMixin
-
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app.entities.task import TaskStatus, TaskType
+from app.models.base import Base
+from app.models.mixins import AuditMixin, HashIDMixin
 
 
 class TaskORM(Base, AuditMixin):

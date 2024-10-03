@@ -1,18 +1,19 @@
 from contextlib import AsyncExitStack, asynccontextmanager
 from typing import AsyncIterator
 
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from app.models.user import UserORM
-from app.entities.user import User, UserCreate
-from app.repositories.exceptions import (
-    RepositoryException,
-    NotFoundException,
-    AlreadyExistsException,
-)
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
 from app.database import async_session_scope
+from app.entities.user import User, UserCreate
+from app.models.user import UserORM
+from app.repositories.exceptions import (
+    AlreadyExistsException,
+    NotFoundException,
+    RepositoryException,
+)
 
 
 class UserRepository:

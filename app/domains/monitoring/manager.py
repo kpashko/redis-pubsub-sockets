@@ -1,11 +1,12 @@
-import logging
-import json
 import asyncio
+import json
+import logging
 
 from fastapi import WebSocket
+
+from app.entities.task import TaskResult, TaskUpdate
 from app.repositories.task import set_up_task_repository
 from app.repositories.task_result import set_up_task_result_repository
-from app.entities.task import TaskUpdate, TaskResult
 
 
 class WebSocketConnectionManager:
@@ -42,9 +43,7 @@ class WebSocketConnectionManager:
 
 
 class RedisPubSubContextManagerV2:
-    def __init__(
-        self, connection_manager, channel: str, redis_conn
-    ):
+    def __init__(self, connection_manager, channel: str, redis_conn):
         self.connection_manager = connection_manager
         self.channel = channel
         self.redis_conn = redis_conn

@@ -1,5 +1,5 @@
-from typing import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
+from typing import AsyncIterator
 
 from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
@@ -7,10 +7,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.models.task import TaskORM
-from app.entities.task import Task, TaskCreate, TaskUpdate
-from app.repositories.exceptions import RepositoryException, NotFoundException
 from app.database import async_session_scope
+from app.entities.task import Task, TaskCreate, TaskUpdate
+from app.models.task import TaskORM
+from app.repositories.exceptions import NotFoundException, RepositoryException
 
 
 class TaskRepository:

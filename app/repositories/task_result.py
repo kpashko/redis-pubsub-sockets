@@ -1,16 +1,14 @@
 from contextlib import AsyncExitStack, asynccontextmanager
 from typing import AsyncIterator
 
-from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from fastapi.encoders import jsonable_encoder
 
-from app.models.task import TaskResultORM
-from app.entities.task import TaskResult
-from app.repositories.exceptions import RepositoryException, NotFoundException
 from app.database import async_session_scope
+from app.entities.task import TaskResult
+from app.models.task import TaskResultORM
+from app.repositories.exceptions import NotFoundException, RepositoryException
 
 
 class TaskResultRepository:

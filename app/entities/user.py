@@ -1,5 +1,5 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 import bcrypt
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 
 class User(BaseModel):

@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from app.entities.user import UserCreate, UserAPIResponse
-from app.repositories.user import set_up_user_repository
+from app.entities.user import UserAPIResponse, UserCreate
 from app.repositories.exceptions import AlreadyExistsException
+from app.repositories.user import set_up_user_repository
 
 router = APIRouter()
 

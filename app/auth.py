@@ -1,10 +1,11 @@
+from datetime import datetime, timedelta
 from typing import Annotated
+
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
 from pydantic import BaseModel
-import bcrypt
 
 from app.repositories.exceptions import NotFoundException
 from app.repositories.user import set_up_user_repository

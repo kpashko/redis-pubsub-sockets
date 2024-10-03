@@ -2,8 +2,9 @@ import functools
 import json
 from typing import Callable
 
-from rq import get_current_job
 from redis.asyncio import Redis
+from rq import get_current_job
+
 from app.tasks.exceptions import TaskException
 
 

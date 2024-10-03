@@ -1,5 +1,6 @@
-import sqlalchemy as sa
 import uuid
+
+import sqlalchemy as sa
 
 
 def _generate_hash_id():

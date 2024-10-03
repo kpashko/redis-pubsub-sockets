@@ -1,17 +1,17 @@
 """this can be either moved to app/redis.py or split between app/redis/"""
 
-from contextlib import asynccontextmanager
 import functools
 import json
 import logging
+from contextlib import asynccontextmanager
+from typing import Callable
+
 from redis import Redis
 from redis.asyncio import Redis as AsyncRedis
 from redis.exceptions import LockNotOwnedError
 from rq import Queue
-from typing import Callable
 
 from app.settings import settings
-
 
 async_redis_conn = AsyncRedis(host="redis", port=6379)
 redis_conn = Redis(host="redis", port=6379)

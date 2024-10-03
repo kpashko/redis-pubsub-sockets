@@ -1,5 +1,5 @@
-import time
 import logging
+import time
 from random import randint
 
 from app.redis import async_redis_conn

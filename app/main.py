@@ -1,15 +1,15 @@
 from fastapi import FastAPI
 
-from app.redis import async_redis_conn
 from app.domains.auth import routes as auth
 from app.domains.monitoring import routes as monitoring
-from app.domains.task import routes as task
-from app.domains.worker import routes as worker
-from app.domains.user import routes as user
 from app.domains.monitoring.manager import (
-    WebSocketConnectionManager,
     RedisPubSubContextManagerV2,
+    WebSocketConnectionManager,
 )
+from app.domains.task import routes as task
+from app.domains.user import routes as user
+from app.domains.worker import routes as worker
+from app.redis import async_redis_conn
 
 app = FastAPI(
     title="My Tech Test",

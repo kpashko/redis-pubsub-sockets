@@ -1,21 +1,22 @@
-from typing import Annotated
 from datetime import datetime
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException
 from rq.exceptions import InvalidJobOperation
 
-from app.repositories.task import set_up_task_repository
-from app.repositories.exceptions import NotFoundException
+from app.auth import get_current_user
 from app.entities.task import (
     Task,
     TaskCreate,
-    TaskUpdate,
     TaskStatus,
     TaskType,
+    TaskUpdate,
 )
-from fastapi import APIRouter, Depends, HTTPException
 from app.entities.user import User
-from app.auth import get_current_user
-from app.tasks import TASK_TYPE_MAP
 from app.redis import cached, task_queue
+from app.repositories.exceptions import NotFoundException
+from app.repositories.task import set_up_task_repository
+from app.tasks import TASK_TYPE_MAP
 
 router = APIRouter()
 
