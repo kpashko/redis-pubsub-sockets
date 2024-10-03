@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     jwt_secret_key: str
 
     worker_list_key: str
+    cache_key: str
+    task_key: str
     task_queue: str
 
 

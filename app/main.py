@@ -1,15 +1,24 @@
 from fastapi import FastAPI
 
-from .domains.auth import routes as auth
-from .domains.monitoring import routes as monitoring
-from .domains.task import routes as task
-from .domains.worker import routes as worker
-from .domains.user import routes as user
-
+from app.redis import async_redis_conn
+from app.domains.auth import routes as auth
+from app.domains.monitoring import routes as monitoring
+from app.domains.task import routes as task
+from app.domains.worker import routes as worker
+from app.domains.user import routes as user
+from app.domains.monitoring.manager import (
+    WebSocketConnectionManager,
+    RedisPubSubContextManagerV2,
+)
 
 app = FastAPI(
     title="My Tech Test",
     swagger_ui_parameters={"defaultModelsExpandDepth": -1},
+)
+
+websocket_manager = WebSocketConnectionManager()
+redis_manager = RedisPubSubContextManagerV2(
+    websocket_manager, channel="task_updates", redis_conn=async_redis_conn
 )
 
 
@@ -21,6 +30,18 @@ def read_root() -> dict[str, str]:
 @app.get("/status")
 def health_check() -> dict[str, str]:
     return {"status": "up"}
+
+
+@app.on_event("startup")
+async def startup_event():
+    await redis_manager.setup()
+    await redis_manager.start_listening()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Clean up Redis and WebSocket connections."""
+    await redis_manager.cleanup()
 
 
 app.include_router(monitoring.router, prefix="/monitoring")

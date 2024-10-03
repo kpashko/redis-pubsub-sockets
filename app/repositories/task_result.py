@@ -1,9 +1,11 @@
 from contextlib import AsyncExitStack, asynccontextmanager
+from typing import AsyncIterator
+
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from typing import AsyncIterator
+from fastapi.encoders import jsonable_encoder
 
 from app.models.task import TaskResultORM
 from app.entities.task import TaskResult
@@ -21,20 +23,18 @@ class TaskResultRepository:
     ):
         self._session = session
 
-    async def add(self, task: TaskResult) -> TaskResult:
-        table = self._model.__table__
-        statement = insert(table).values(**task.dict()).returning(table)
-
+    async def add(self, task_result: TaskResult) -> TaskResult:
         try:
-            result = await self._session.execute(statement)
+            task_result_orm = TaskResultORM(
+                task_id=task_result.task_id,
+                result=task_result.result,
+            )
+            self._session.add(task_result_orm)
             await self._session.commit()
         except SQLAlchemyError as exc:
             raise RepositoryException from exc
 
-        raw_data = result.fetchone()._asdict()
-        created_task = self._entity.model_validate(raw_data)
-
-        return created_task
+        return task_result
 
     async def get(self, task_id: str) -> TaskResult:
         statement = select(self._model).where(self._model.task_id == task_id)

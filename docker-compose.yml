@@ -62,7 +62,7 @@ services:
     build:
       context: .
       target: development
-    command: rq worker tasks_queue --url redis://redis:6379
+    command: rq worker task_queue --url redis://redis:6379
     depends_on:
       - redis
     volumes:

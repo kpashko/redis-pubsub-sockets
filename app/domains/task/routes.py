@@ -1,13 +1,21 @@
 from typing import Annotated
 from datetime import datetime
+from rq.exceptions import InvalidJobOperation
 
 from app.repositories.task import set_up_task_repository
-from app.repositories.task_result import set_up_task_result_repository
 from app.repositories.exceptions import NotFoundException
-from app.entities.task import Task, TaskCreate, TaskUpdate, TaskResult, TaskStatus
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from app.entities.task import (
+    Task,
+    TaskCreate,
+    TaskUpdate,
+    TaskStatus,
+    TaskType,
+)
+from fastapi import APIRouter, Depends, HTTPException
 from app.entities.user import User
 from app.auth import get_current_user
+from app.tasks import TASK_TYPE_MAP
+from app.redis import cached, task_queue
 
 router = APIRouter()
 
@@ -15,17 +23,26 @@ router = APIRouter()
 # Create a new task
 @router.post("/", tags=["tasks"], response_model=Task)
 async def create_task(
-    status: TaskStatus,
-    background_tasks: BackgroundTasks,
+    task_type: TaskType,
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> None:
+    task_func = TASK_TYPE_MAP.get(task_type)
+    if task_func:
+        job = task_queue.enqueue(task_func, 10)
+    else:
+        raise HTTPException(status_code=400, detail="Task type not supported")
+
     task_data = TaskCreate(
-        created_by=current_user.id, updated_by=current_user.id, status=status
+        id=job.id,
+        created_by=current_user.id,
+        updated_by=current_user.id,
+        task_type=task_type,
+        status=TaskStatus.QUEUED,
     )
     async with set_up_task_repository() as repo:
-        result = await repo.add(task_data)  # probably should convert here
-        # background_tasks.add_task(repo.add, task_data)
-        return result
+        task_created = await repo.add(task_data)
+
+    return task_created
 
 
 @router.patch("/{task_id}", tags=["tasks"], response_model=Task)
@@ -35,27 +52,24 @@ async def update_task(task_id: str, status: TaskStatus) -> None:
         return result
 
 
-# @router.post("/", tags=["tasks"], response_model=Task)
-# async def create_task(task_data: TaskCreate, background_tasks: BackgroundTasks):
-#     task_id = str(uuid.uuid4())
-#     task_status[task_id] = {"status": "queued", "result": None}
-#
-#     # Enqueue the task for processing
-#     job = task_queue.enqueue(repo.add, task_data)
-#     task_status[task_id]['status'] = 'in_progress'
-#
-#     return {"id": task_id, "status": "queued"}
-
-
 # Retrieve the status of a given task
-@router.get("/{task_id}", tags=["tasks"], response_model=TaskResult)
-async def get_task_status(task_id: str) -> None:
-    async with set_up_task_result_repository() as repo:
-        try:
-            result = await repo.get(task_id)
-            return result
-        except NotFoundException as e:
-            raise HTTPException(status_code=404, detail=str(e))
+@router.get("/{task_id}", tags=["tasks"])
+@cached(ttl=60)
+async def get_task_status(task_id: str) -> dict[str, str]:
+    job = task_queue.fetch_job(task_id)
+    if not job:
+        async with set_up_task_repository() as repo:
+            try:
+                task = await repo.get(task_id)
+                return task.dict()
+            except NotFoundException as e:
+                raise HTTPException(status_code=404, detail=str(e))
+
+    return {
+        "task_id": task_id,
+        "status": job.get_status(),
+        "result": str(job.result),
+    }
 
 
 # Cancel a task
@@ -63,6 +77,15 @@ async def get_task_status(task_id: str) -> None:
 async def cancel_task(
     task_id: str, current_user: Annotated[User, Depends(get_current_user)]
 ) -> dict[str, str]:
+    job = task_queue.fetch_job(task_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    try:
+        job.cancel()
+    except InvalidJobOperation:
+        raise HTTPException(status_code=400, detail="Task already cancelled")
+
     async with set_up_task_repository() as repo:
         await repo.update(
             TaskUpdate(
