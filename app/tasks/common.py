@@ -13,7 +13,7 @@ async def _publish_status(redis_conn: Redis, task_id: str, status: str, result=N
     Publishes the status of the task to Redis Pub/Sub.
     """
     message = json.dumps({"task_id": task_id, "status": status, "result": result})
-    await redis_conn.publish("task_updates", message)
+    await redis_conn.publish(f"task_updates_{task_id}", message)
 
 
 def redis_task(redis_conn: Redis):

@@ -26,7 +26,9 @@ async def register_worker(worker_info: dict[str, Any]) -> dict[str, str]:
 @router.get("/next", tags=["workers"])
 async def get_next_worker() -> dict[str, str]:
     """
-    Get the next available worker using Redis LMOVE for round-robin.
+    Get the next available worker using Redis LMOVE. Each time this endpoint is called, it will return the next worker
+    from the pool of workers.
+     This will be handful for load balancing.
     """
     worker_id = await redis_conn.lmove(
         settings.worker_list_key, settings.worker_list_key, "LEFT", "RIGHT"

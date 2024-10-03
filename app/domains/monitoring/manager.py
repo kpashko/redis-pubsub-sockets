@@ -53,8 +53,8 @@ class RedisPubSubContextManagerV2:
 
     async def setup(self):
         """Set up Redis connection and subscribe to the channel."""
-        self.logger.info(f"Subscribing to {self.channel}")
-        await self.pubsub.subscribe(self.channel)
+        self.logger.info(f"Subscribing to {self.channel}_*")
+        await self.pubsub.psubscribe(f"{self.channel}_*")
 
     async def start_listening(self):
         """Start the Redis Pub/Sub listener using asyncio.create_task."""
