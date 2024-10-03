@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.database import async_session_scope
-from app.entities.task import TaskResult
+from app.domains.task import TaskResult
 from app.models.task import TaskResultORM
 from app.repositories.exceptions import NotFoundException, RepositoryException
 

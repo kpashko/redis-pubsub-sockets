@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.database import async_session_scope
-from app.entities.task import Task, TaskCreate, TaskUpdate
+from app.domains.task import Task, TaskCreate, TaskUpdate
 from app.models.task import TaskORM
 from app.repositories.exceptions import NotFoundException, RepositoryException
 

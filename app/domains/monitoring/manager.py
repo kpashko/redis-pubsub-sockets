@@ -4,7 +4,7 @@ import logging
 
 from fastapi import WebSocket
 
-from app.entities.task import TaskResult, TaskUpdate
+from app.domains.task import TaskResult, TaskUpdate
 from app.repositories.task import set_up_task_repository
 from app.repositories.task_result import set_up_task_result_repository
 

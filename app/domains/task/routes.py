@@ -1,18 +1,12 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from rq.exceptions import InvalidJobOperation
 
 from app.auth import get_current_user
-from app.entities.task import (
-    Task,
-    TaskCreate,
-    TaskStatus,
-    TaskType,
-    TaskUpdate,
-)
-from app.entities.user import User
+from app.domains.task import Task, TaskCreate, TaskStatus, TaskType, TaskUpdate
+from app.domains.user import User
 from app.redis import cached, task_queue
 from app.repositories.exceptions import NotFoundException
 from app.repositories.task import set_up_task_repository
@@ -54,7 +48,11 @@ async def update_task(task_id: str, status: TaskStatus) -> None:
 
 
 # Retrieve the status of a given task
-@router.get("/{task_id}", tags=["tasks"])
+@router.get(
+    "/{task_id}",
+    tags=["tasks"],
+    responses={status.HTTP_404_NOT_FOUND: {"detail": "Task not found"}},
+)
 @cached(ttl=60)
 async def get_task_status(task_id: str) -> dict[str, str]:
     job = task_queue.fetch_job(task_id)
@@ -64,7 +62,9 @@ async def get_task_status(task_id: str) -> dict[str, str]:
                 task = await repo.get(task_id)
                 return task.dict()
             except NotFoundException as e:
-                raise HTTPException(status_code=404, detail=str(e))
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
+                )
 
     return {
         "task_id": task_id,
@@ -74,18 +74,29 @@ async def get_task_status(task_id: str) -> dict[str, str]:
 
 
 # Cancel a task
-@router.delete("/{task_id}", tags=["tasks"])
+@router.delete(
+    "/{task_id}",
+    tags=["tasks"],
+    responses={
+        status.HTTP_400_BAD_REQUEST: {"detail": "Task already cancelled"},
+        status.HTTP_404_NOT_FOUND: {"detail": "Task not found"},
+    },
+)
 async def cancel_task(
     task_id: str, current_user: Annotated[User, Depends(get_current_user)]
 ) -> dict[str, str]:
     job = task_queue.fetch_job(task_id)
     if not job:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
+        )
 
     try:
         job.cancel()
     except InvalidJobOperation:
-        raise HTTPException(status_code=400, detail="Task already cancelled")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Task already cancelled"
+        )
 
     async with set_up_task_repository() as repo:
         await repo.update(

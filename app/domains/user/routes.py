@@ -1,23 +1,32 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 
-from app.entities.user import UserAPIResponse, UserCreate
+from app.api import ResponseErrorSchema
+from app.domains.user import User, UserAPICreate, UserAPIResponse, UserCreateDB
 from app.repositories.exceptions import AlreadyExistsException
 from app.repositories.user import set_up_user_repository
 
 router = APIRouter()
 
 
-class UserResponse(BaseModel):
-    message: str = "User created successfully"
-    user: None | UserAPIResponse = None
-
-
-@router.post("/", tags=["users"], response_model=UserResponse)
-async def create_user(user_data: UserCreate):
+@router.post(
+    "/",
+    tags=["users"],
+    response_model=UserAPIResponse,
+    responses={
+        status.HTTP_409_CONFLICT: {
+            "model": ResponseErrorSchema,
+            "detail": "User already exists",
+        }
+    },
+)
+async def create_user(user_data: UserAPICreate):
     try:
         async with set_up_user_repository() as repo:
-            user = await repo.add(user_data)
-    except AlreadyExistsException as exc:
-        return UserResponse(message=str(exc))
-    return UserResponse(user=UserAPIResponse.model_validate(user))
+            user = await repo.add(UserCreateDB(**user_data.dict()))
+    except AlreadyExistsException:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User already exists",
+        )
+    return UserAPIResponse(user=user)

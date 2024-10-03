@@ -1,19 +1,8 @@
 from datetime import datetime
-from enum import StrEnum
 
 from pydantic import BaseModel
 
-
-class TaskStatus(StrEnum):
-    QUEUED = "queued"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
-
-
-class TaskType(StrEnum):
-    SAMPLE = "sample"
+from app.domains.task import TaskStatus, TaskType
 
 
 class Task(BaseModel):

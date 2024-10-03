@@ -2,27 +2,20 @@ import bcrypt
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 
-class User(BaseModel):
-    id: str
+class UserBase(BaseModel):
     name: str
     email: EmailStr
+
+
+class User(UserBase):
+    id: str
+    password: str
+
+
+class UserCreateDB(UserBase):
     password: str
 
     model_config = ConfigDict(from_attributes=True)
-
-
-class UserAPIResponse(BaseModel):
-    id: str
-    name: str
-    email: EmailStr
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class UserCreate(BaseModel):
-    name: str
-    email: EmailStr
-    password: str
 
     @field_validator("password", mode="before")
     def hash_password(cls, value):
@@ -30,3 +23,12 @@ class UserCreate(BaseModel):
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password=pwd_bytes, salt=salt)
         return hashed_password
+
+
+class UserAPIResponse(BaseModel):
+    message: str = "User created successfully"
+    user: None | UserBase = None
+
+
+class UserAPICreate(UserBase):
+    password: str

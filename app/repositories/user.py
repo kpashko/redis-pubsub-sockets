@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.database import async_session_scope
-from app.entities.user import User, UserCreate
+from app.domains.user.entities import User, UserCreateDB
 from app.models.user import UserORM
 from app.repositories.exceptions import (
     AlreadyExistsException,
@@ -26,7 +26,7 @@ class UserRepository:
     ):
         self._session = session
 
-    async def add(self, user: UserCreate) -> User:
+    async def add(self, user: UserCreateDB) -> User:
         table = self._model.__table__
         statement = insert(table).values(**user.dict()).returning(table)
 

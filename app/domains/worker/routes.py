@@ -1,7 +1,7 @@
-from typing import Any
+from fastapi import APIRouter, HTTPException, status
 
-from fastapi import APIRouter
-
+from app.api import ResponseErrorSchema
+from app.domains.worker import RegisterWorkerResponse, Worker
 from app.redis import async_redis_conn as redis_conn
 from app.settings import settings
 
@@ -9,22 +9,26 @@ router = APIRouter()
 
 
 # Worker registration
-@router.post("/register", tags=["workers"])
-async def register_worker(worker_info: dict[str, Any]) -> dict[str, str]:
-    worker_id = worker_info.get("id")
+@router.post("/register", tags=["workers"], response_model=RegisterWorkerResponse)
+async def register_worker(worker: Worker) -> RegisterWorkerResponse:
+    await redis_conn.rpush(settings.worker_list_key, worker.id)
 
-    if not worker_id:
-        return {"error": "Worker ID is required"}
-
-    # Add worker ID to the list
-    await redis_conn.rpush(settings.worker_list_key, worker_id)
-
-    return {"message": f"Worker {worker_id} registered successfully"}
+    return RegisterWorkerResponse(message=f"Worker {worker.id} registered successfully")
 
 
 # Worker load balancing
-@router.get("/next", tags=["workers"])
-async def get_next_worker() -> dict[str, str]:
+@router.get(
+    "/next",
+    tags=["workers"],
+    response_model=Worker,
+    responses={
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "model": ResponseErrorSchema,
+            "detail": "No workers available at the moment",
+        }
+    },
+)
+async def get_next_worker() -> Worker:
     """
     Get the next available worker using Redis LMOVE. Each time this endpoint is called, it will return the next worker
     from the pool of workers.
@@ -35,6 +39,9 @@ async def get_next_worker() -> dict[str, str]:
     )
 
     if not worker_id:
-        return {"error": "No workers available"}
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No workers available at the moment",
+        )
 
-    return {"worker_id": worker_id.decode("utf-8")}
+    return Worker(id=worker_id.decode("utf-8"))
