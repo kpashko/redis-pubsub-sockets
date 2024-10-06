@@ -106,5 +106,5 @@ class RedisPubSubContextManagerV2:
             self.logger.info(f"Unsubscribed from Redis channel: {self.channel}")
 
         if self.redis_conn:
-            await self.redis_conn.close()
+            await self.redis_conn.aclose()
             self.logger.info("Closed Redis connection.")

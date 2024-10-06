@@ -4,8 +4,11 @@
 # Environments
 .env
 .venv
+env/
+venv/
+ENV/
 
-# Tests, Coverage
+# test / coverage
 htmlcov/
 .tox/
 .nox/
@@ -19,4 +22,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
-cov_html/
+
+# linter
+.ruff_cache/
+.mypy_cache/

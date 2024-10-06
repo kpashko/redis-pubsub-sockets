@@ -1,4 +1,4 @@
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from sqlalchemy.dialects.postgresql import insert
@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.database import async_session_scope
+from app.database import get_async_session
 from app.domains.user.entities import User, UserCreateDB
 from app.models.user import UserORM
 from app.repositories.exceptions import (
@@ -71,6 +71,5 @@ class UserRepository:
 
 @asynccontextmanager
 async def set_up_user_repository() -> AsyncIterator[UserRepository]:
-    async with AsyncExitStack() as stack:
-        async_session = await stack.enter_async_context(async_session_scope())
+    async with get_async_session() as async_session:
         yield UserRepository(async_session)

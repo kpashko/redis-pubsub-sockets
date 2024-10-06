@@ -25,7 +25,7 @@ async def tasks_monitoring(websocket: WebSocket) -> None:
                 data = json.loads(message["data"])
                 await websocket.send_text(json.dumps(data))
     except WebSocketDisconnect:
-        await pubsub.psubscribe("task_updates_*")
+        await pubsub.punsubscribe("task_updates_*")
         logger.info("Client disconnected from tasks monitoring")
 
 

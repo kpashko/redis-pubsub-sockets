@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.domains.task import TaskStatus, TaskType
+from app.domains.task.enums import TaskStatus, TaskType
 
 
 class Task(BaseModel):
@@ -36,3 +36,13 @@ class TaskResult(BaseModel):
 class TaskResultCreate(BaseModel):
     task_id: str
     result: dict
+
+
+class TaskApiResponse(BaseModel):
+    task_id: str
+    status: TaskStatus
+    result: dict
+
+
+class TaskCancelledApiResponse(BaseModel):
+    message: str = "Task {task_id} cancelled"

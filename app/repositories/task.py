@@ -1,4 +1,4 @@
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from sqlalchemy import update
@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.database import async_session_scope
+from app.database import get_async_session
 from app.domains.task import Task, TaskCreate, TaskUpdate
 from app.models.task import TaskORM
 from app.repositories.exceptions import NotFoundException, RepositoryException
@@ -73,6 +73,5 @@ class TaskRepository:
 
 @asynccontextmanager
 async def set_up_task_repository() -> AsyncIterator[TaskRepository]:
-    async with AsyncExitStack() as stack:
-        async_session = await stack.enter_async_context(async_session_scope())
+    async with get_async_session() as async_session:
         yield TaskRepository(async_session)

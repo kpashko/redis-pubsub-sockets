@@ -30,13 +30,14 @@ async def async_session_scope() -> AsyncGenerator[AsyncSessionType, None]:
     session = AsyncSession()
     try:
         yield session
-    except:
+    except Exception:
         await session.rollback()
         raise
     finally:
         await session.close()
 
 
+@asynccontextmanager
 async def get_async_session() -> AsyncGenerator[AsyncSessionType, None]:
     """
     Asynchronous SQLAlchemy session injector for FastAPI Dependency Injection

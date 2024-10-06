@@ -1,5 +1,7 @@
 from app.domains.task.entities import (
     Task,
+    TaskApiResponse,
+    TaskCancelledApiResponse,
     TaskCreate,
     TaskResult,
     TaskResultCreate,
