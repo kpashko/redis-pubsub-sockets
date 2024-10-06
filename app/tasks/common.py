@@ -1,10 +1,12 @@
 import functools
 import json
-from typing import Callable
+from typing import Awaitable, Callable
 
 from redis.asyncio import Redis
 from rq import get_current_job
 
+from app.domains.task import TaskStatus
+from app.redis import get_redis
 from app.tasks.exceptions import TaskException
 
 
@@ -16,32 +18,30 @@ async def _publish_status(redis_conn: Redis, task_id: str, status: str, result=N
     await redis_conn.publish(f"task_updates_{task_id}", message)
 
 
-def redis_task(redis_conn: Redis):
+def redis_task(task_func: Callable[..., Awaitable]):
     """
     A decorator that publishes task status updates to Redis Pub/Sub.
     Task must be async i.e. a coroutine function.
     """
 
-    def inner_wrapper(task_func: Callable):
-        @functools.wraps(task_func)
-        async def async_wrapper(*args, **kwargs):
-            job = get_current_job()
-            task_id = job.id
+    @functools.wraps(task_func)
+    async def async_wrapper(*args, **kwargs):
+        job = get_current_job()
+        task_id = job.id
 
+        async with get_redis() as redis_conn:
             try:
-                await _publish_status(
-                    redis_conn, task_id, "running"
-                )  # TODO: use TaskStatus enum
+                await _publish_status(redis_conn, task_id, TaskStatus.RUNNING)
 
                 result = await task_func(*args, **kwargs)
 
-                await _publish_status(redis_conn, task_id, "completed", result)
+                await _publish_status(redis_conn, task_id, TaskStatus.COMPLETED, result)
             except TaskException as e:
-                await _publish_status(redis_conn, task_id, "failed", result=str(e))
+                await _publish_status(
+                    redis_conn, task_id, TaskStatus.FAILED, result=str(e)
+                )
                 raise
 
             return result
 
-        return async_wrapper
-
-    return inner_wrapper
+    return async_wrapper

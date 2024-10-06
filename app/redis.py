@@ -4,7 +4,7 @@ import functools
 import json
 import logging
 from contextlib import asynccontextmanager
-from typing import Callable
+from typing import AsyncGenerator, Callable
 
 from redis import Redis
 from redis.asyncio import Redis as AsyncRedis
@@ -22,6 +22,20 @@ CACHE_TTL = 120
 LOCK_TIMEOUT = 300
 
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def get_redis() -> AsyncGenerator[AsyncRedis, None]:
+    client = None
+    try:
+        client = await AsyncRedis.from_url(settings.redis_url, decode_responses=True)
+        yield client
+    except Exception as e:
+        logger.error(f"Error while connecting to Redis: {e}")
+    finally:
+        if client:
+            await client.close()
+            await client.wait_closed()
 
 
 def cached(ttl: int = CACHE_TTL, redis_connection: Redis = async_redis_conn):

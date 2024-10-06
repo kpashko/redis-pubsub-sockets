@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel
 
 from app.api import ResponseErrorSchema
 from app.domains.user import User, UserAPICreate, UserAPIResponse, UserCreateDB

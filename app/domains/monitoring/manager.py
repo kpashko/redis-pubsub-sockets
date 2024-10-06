@@ -5,6 +5,7 @@ import logging
 from fastapi import WebSocket
 
 from app.domains.task import TaskResult, TaskUpdate
+from app.redis import get_redis
 from app.repositories.task import set_up_task_repository
 from app.repositories.task_result import set_up_task_result_repository
 
@@ -108,3 +109,14 @@ class RedisPubSubContextManagerV2:
         if self.redis_conn:
             await self.redis_conn.aclose()
             self.logger.info("Closed Redis connection.")
+
+
+async def create_redis_pubsub_context_manager(
+    channel: str = "task_updates",
+) -> RedisPubSubContextManagerV2:
+    async for redis_conn in get_redis():
+        return RedisPubSubContextManagerV2(
+            connection_manager=WebSocketConnectionManager(),
+            channel=channel,
+            redis_conn=redis_conn,
+        )
