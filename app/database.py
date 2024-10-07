@@ -2,8 +2,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession as AsyncSessionType
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.settings import settings
 
@@ -11,7 +10,7 @@ async_engine = create_async_engine(
     settings.sqlalchemy_async_engine_url.unicode_string(), future=True
 )
 
-AsyncSession = sessionmaker(
+AsyncSession = async_sessionmaker(
     autocommit=False,
     autoflush=False,
     expire_on_commit=False,
@@ -22,7 +21,7 @@ AsyncSession = sessionmaker(
 
 
 @asynccontextmanager
-async def async_session_scope() -> AsyncGenerator[AsyncSessionType, None]:
+async def get_async_session() -> AsyncGenerator[AsyncSessionType, None]:
     """
     Asynchronous SQLAlchemy session context manager for
     declarative session connecting in service-level code.
@@ -35,12 +34,3 @@ async def async_session_scope() -> AsyncGenerator[AsyncSessionType, None]:
         raise
     finally:
         await session.close()
-
-
-@asynccontextmanager
-async def get_async_session() -> AsyncGenerator[AsyncSessionType, None]:
-    """
-    Asynchronous SQLAlchemy session injector for FastAPI Dependency Injection
-    """
-    async with async_session_scope() as session:
-        yield session

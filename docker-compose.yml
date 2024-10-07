@@ -75,7 +75,7 @@ services:
   tests:
     container_name: tests
     profiles:
-      - donotstart
+      - testing
     build:
       context: .
       target: testing
@@ -83,11 +83,28 @@ services:
     volumes:
       - ./:/app/
     depends_on:
-      db:
+      db_test:
         condition: service_healthy
+    env_file:
+      - .env.test
     environment:
       - PYTHONUNBUFFERED=1
-    command: python -m pytest -vv --disable-warnings --maxfail=1
+    command:  sh -c "alembic upgrade head && python -m pytest -vv --disable-warnings --maxfail=1"
+
+  db_test:
+    container_name: db_test
+    image: postgres:16
+    environment:
+      POSTGRES_DB: test_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - testing
 
 volumes:
   db:

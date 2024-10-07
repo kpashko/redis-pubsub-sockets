@@ -41,7 +41,7 @@ class TaskResultCreate(BaseModel):
 class TaskApiResponse(BaseModel):
     task_id: str
     status: TaskStatus
-    result: dict
+    result: None | dict = None
 
 
 class TaskCancelledApiResponse(BaseModel):

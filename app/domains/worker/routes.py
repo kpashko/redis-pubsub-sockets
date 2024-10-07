@@ -16,7 +16,8 @@ router = APIRouter()
 async def register_worker(
     worker: Worker, redis_client: Annotated[Redis, Depends(get_redis)]
 ) -> RegisterWorkerResponse:
-    await redis_client.rpush(settings.worker_list_key, worker.id)
+    async with redis_client:
+        await redis_client.rpush(settings.worker_list_key, worker.id)
 
     return RegisterWorkerResponse(message=f"Worker {worker.id} registered successfully")
 
@@ -25,13 +26,13 @@ async def register_worker(
 @router.get(
     "/next",
     tags=["workers"],
-    response_model=Worker,
     responses={
         status.HTTP_503_SERVICE_UNAVAILABLE: {
             "model": ResponseErrorSchema,
             "detail": "No workers available at the moment",
         }
     },
+    response_model=Worker,
 )
 async def get_next_worker(redis_client: Annotated[Redis, Depends(get_redis)]) -> Worker:
     """
@@ -39,14 +40,15 @@ async def get_next_worker(redis_client: Annotated[Redis, Depends(get_redis)]) ->
     from the pool of workers.
      This will be handful for load balancing.
     """
-    worker_id = await redis_client.lmove(
-        settings.worker_list_key, settings.worker_list_key, "LEFT", "RIGHT"
-    )
-
-    if not worker_id:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="No workers available at the moment",
+    async with redis_client:
+        worker_id = await redis_client.lmove(
+            settings.worker_list_key, settings.worker_list_key, "LEFT", "RIGHT"
         )
 
-    return Worker(id=worker_id.decode("utf-8"))
+        if not worker_id:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="No workers available at the moment",
+            )
+
+        return Worker(id=worker_id.decode("utf-8"))

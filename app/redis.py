@@ -1,8 +1,7 @@
-"""this can be either moved to app/redis.py or split between app/redis/"""
-
 import functools
 import json
 import logging
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Callable
 
@@ -12,11 +11,6 @@ from redis.exceptions import LockNotOwnedError
 from rq import Queue
 
 from app.settings import settings
-
-async_redis_conn = AsyncRedis(host="redis", port=6379)
-redis_conn = Redis(host="redis", port=6379)
-# rq only supports synchronous Redis connections
-task_queue = Queue(settings.task_queue, connection=redis_conn)
 
 CACHE_TTL = 120
 LOCK_TIMEOUT = 300
@@ -35,14 +29,23 @@ async def get_redis() -> AsyncGenerator[AsyncRedis, None]:
     finally:
         if client:
             await client.close()
-            await client.wait_closed()
 
 
-def cached(ttl: int = CACHE_TTL, redis_connection: Redis = async_redis_conn):
+def get_sync_redis() -> Redis:
+    """Returns a synchronous Redis connection for use with rq."""
+    return Redis.from_url(settings.redis_url, decode_responses=True)
+
+
+def get_task_queue() -> Queue:
+    """Returns an rq Queue using the synchronous Redis connection."""
+    red_conn = get_sync_redis()
+    return Queue(settings.task_queue, connection=red_conn)
+
+
+def cached(ttl: int = CACHE_TTL):
     """Simple decorator to cache the result of a function in Redis.
     Args:
         ttl (int): The time-to-live (TTL) for the cache key. Default is 120 seconds.
-        redis_connection (Redis): The Redis connection to use. Default is async_redis_conn.
     Usage:
         @router.get("/items/{item_id}")\n
         @cached(ttl=60)\n
@@ -54,22 +57,25 @@ def cached(ttl: int = CACHE_TTL, redis_connection: Redis = async_redis_conn):
     def decorator(func: Callable):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
+            if os.getenv("DISABLE_CACHE", "false").lower() == "true":
+                return await func(*args, **kwargs)
             # Generate a unique cache key based on function name and arguments
             func_name = func.__name__
             key = f"{settings.cache_key}:{func_name}:{args}:{kwargs}"
 
-            cached_hit = await redis_connection.get(key)
-            if cached_hit:
-                print(f"Cache hit for {key}")
-                return json.loads(cached_hit)
+            async with get_redis() as redis_connection:
+                cached_hit = await redis_connection.get(key)
+                if cached_hit:
+                    print(f"Cache hit for {key}")
+                    return json.loads(cached_hit)
 
-            # Cache miss: call the function and cache the result
-            print(f"Cache miss for {key}")
-            result = await func(*args, **kwargs)
-            await redis_connection.setex(
-                key, ttl, json.dumps(result)
-            )  # Cache result with TTL
-            return result
+                # Cache miss: call the function and cache the result
+                print(f"Cache miss for {key}")
+                result = await func(*args, **kwargs)
+                await redis_connection.setex(
+                    key, ttl, json.dumps(result)
+                )  # Cache result with TTL
+                return result
 
         return wrapper
 

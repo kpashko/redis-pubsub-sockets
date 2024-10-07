@@ -1,11 +1,15 @@
 from enum import StrEnum
 
+from rq.job import JobStatus
+
 
 class TaskStatus(StrEnum):
     QUEUED = "queued"
-    RUNNING = "running"
-    COMPLETED = "completed"
+    FINISHED = "finished"
     FAILED = "failed"
+    STARTED = "started"
+    DEFERRED = "deferred"
+    SCHEDULED = "scheduled"
     CANCELLED = "cancelled"
 
 

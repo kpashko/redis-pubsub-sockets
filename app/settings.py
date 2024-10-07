@@ -23,8 +23,7 @@ class Settings(
 ):
     class Config:
         extra = "allow"
-        env = os.getenv("ENV", "dev")
-        env_file = ".env.test" if env == "test" else ".env"
+        env_file = '.env'
 
     access_token_expire_minutes: int
     jwt_secret_key: str

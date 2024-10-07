@@ -24,14 +24,38 @@ docker compose up
 
 The swagger documentation lives at http://127.0.0.1:8080/docs
 
-## Run the tests (with compose running)
 
-```python3
-docker exec -it app python3 -m pytest
-```
-
-## Run the tests (without compose running)
+## Run the tests
 
 ```python3
 docker compose up tests --exit-code-from tests
+```
+
+## Run the linter
+
+```python3
+ruff check --select I --fix .  # run isort
+ruff format .
+```
+
+## Using locks for long running tasks
+
+```python3
+from app.redis import get_redis, task_lock
+
+async with get_redis() as redis_conn:
+   async with task_lock(redis_conn, "my_task_lock") as lock_acquired:
+       if not lock_acquired:
+           raise Exception("Task already running")
+       do_something()
+```
+
+## Using caching for endpoints:
+```python3
+from app.redis import cached
+
+@router.get("/items/{item_id}")
+@cached()
+async def get_item():
+    ...
 ```
